@@ -460,6 +460,15 @@
         <button style="padding:8px 16px;background:var(--red-bg);color:var(--red);border:none;border-radius:var(--radius);font-size:13px;font-weight:500;cursor:pointer;font-family:'Inter',sans-serif;" onclick="clearAll()">🗑 Clear all data</button>
       </div>
     </div>
+    <div class="card" style="margin-top:16px;">
+      <div class="card-header"><span class="card-title">EMI / Loan Defaults</span></div>
+      <div class="card-body" style="padding:20px;">
+        <p style="font-size:13px;color:var(--text2);margin-bottom:12px;">These defaults auto-fill when you add a new EMI loan.</p>
+        <div class="field"><label>Default Annual Interest Rate (%)</label><input type="number" id="setting-rate" placeholder="e.g. 8.5" min="0" step="0.1"></div>
+        <div class="field"><label>Default Loan Tenure (Months)</label><input type="number" id="setting-tenure" placeholder="e.g. 60" min="1" step="1"></div>
+        <button class="btn-primary" onclick="saveEMIDefaults()">Save EMI Defaults</button>
+      </div>
+    </div>
   </div>
 
 </div><!-- /container -->
@@ -505,21 +514,38 @@
 </div>
 
 <div class="overlay" id="overlay-debt">
-  <div class="modal">
+  <div class="modal" style="width:420px;">
     <h3>Add Debt / IOU</h3>
-    <div class="field"><label>Person's Name *</label><input type="text" id="debt-person" placeholder="e.g. Rahul"></div>
-    <div class="field"><label>Amount (₹) *</label><input type="number" id="debt-amt" placeholder="0" min="0" step="0.01"></div>
+    <div class="field">
+      <label style="display:flex;align-items:center;gap:8px;cursor:pointer;">
+        <input type="checkbox" id="debt-is-emi" onchange="toggleEMIFields()"> 
+        <span>This is an EMI/Loan (auto-calculate monthly installments)</span>
+      </label>
+    </div>
+    <div class="field"><label>Name/Bank *</label><input type="text" id="debt-person" placeholder="e.g. HDFC Bank"></div>
+    <div class="field"><label>Principal Amount (₹) *</label><input type="number" id="debt-amt" placeholder="0" min="0" step="0.01" oninput="updateEMIPreview()"></div>
     <div class="field"><label>Type *</label>
       <select id="debt-type">
         <option value="owe">I owe them</option>
         <option value="owed">They owe me</option>
       </select>
     </div>
-    <div class="field"><label>Note (optional)</label><input type="text" id="debt-note" placeholder="e.g. Dinner split at Barbeque Nation"></div>
-    <div class="field"><label>Due Date (optional)</label><input type="date" id="debt-due"></div>
+    
+    <!-- EMI-specific fields -->
+    <div id="emi-fields" style="display:none;border-top:1px solid var(--border);padding-top:12px;margin-top:12px;">
+      <div class="field"><label>Annual Interest Rate (%) *</label><input type="number" id="debt-rate" placeholder="e.g. 7.5" min="0" step="0.1" onchange="updateEMIPreview()"></div>
+      <div class="field"><label>Tenure (Months) *</label><input type="number" id="debt-tenure" placeholder="e.g. 60" min="1" step="1" onchange="updateEMIPreview()"></div>
+      <div class="field" id="emi-preview-field" style="display:none;background:var(--surface2);padding:10px;border-radius:7px;border:1px solid var(--border);">
+        <div style="font-size:12px;color:var(--text2);margin-bottom:4px;">Monthly EMI (estimated)</div>
+        <div style="font-size:16px;font-weight:600;color:var(--green);" id="emi-preview">₹0</div>
+      </div>
+    </div>
+
+    <div class="field"><label>Note (optional)</label><input type="text" id="debt-note" placeholder="e.g. Home loan, Car loan"></div>
+    <div class="field"><label>Start Date</label><input type="date" id="debt-start-date"></div>
     <div class="modal-actions">
       <button class="btn-modal-cancel" onclick="closeModals()">Cancel</button>
-      <button class="btn-modal-save" onclick="addDebt()">Save</button>
+      <button class="btn-modal-save" onclick="addDebt()">Save Debt</button>
     </div>
   </div>
 </div>
@@ -599,6 +625,91 @@ function fmtDate(d) {
   return dt.toLocaleDateString('en-IN', { day: 'numeric', month: 'short' });
 }
 
+// ── EMI Calculation ──────────────────────────────────────────────
+function calculateEMI(principal, annualRate, tenure) {
+  // EMI = P × r × (1 + r)^n / ((1 + r)^n - 1)
+  // where r = monthly interest rate (annual rate / 12 / 100)
+  if (principal <= 0 || annualRate < 0 || tenure <= 0) return 0;
+  const monthlyRate = annualRate / 12 / 100;
+  if (monthlyRate === 0) return principal / tenure;
+  const n = tenure;
+  const emi = (principal * monthlyRate * Math.pow(1 + monthlyRate, n)) / (Math.pow(1 + monthlyRate, n) - 1);
+  return emi;
+}
+
+function generatePaymentSchedule(startDate, tenure, emiAmount, principal, annualRate) {
+  const schedule = [];
+  let remainingAmount = principal;
+  let currentDate = new Date(startDate + 'T00:00:00');
+  const monthlyRate = annualRate / 12 / 100;
+  
+  for (let i = 0; i < tenure; i++) {
+    const monthKey = currentDate.toISOString().slice(0, 7);
+    const interest = remainingAmount * monthlyRate;
+    const principalPaid = Math.max(0, emiAmount - interest);
+    remainingAmount = Math.max(0, remainingAmount - principalPaid);
+    
+    schedule.push({
+      month: monthKey,
+      emi: emiAmount,
+      principal: principalPaid,
+      interest: interest,
+      remainingAmount: remainingAmount,
+      status: 'pending',
+      paidDate: null
+    });
+    
+    currentDate.setMonth(currentDate.getMonth() + 1);
+  }
+  return schedule;
+}
+
+// ── EMI Helpers ──────────────────────────────────────────────────
+function toggleEMIFields() {
+  const on = document.getElementById('debt-is-emi').checked;
+  document.getElementById('emi-fields').style.display = on ? 'block' : 'none';
+  if (!on) document.getElementById('emi-preview-field').style.display = 'none';
+  if (on) updateEMIPreview();
+}
+
+function updateEMIPreview() {
+  const p = parseFloat(document.getElementById('debt-amt').value) || 0;
+  const r = parseFloat(document.getElementById('debt-rate').value) || 0;
+  const n = parseInt(document.getElementById('debt-tenure').value) || 0;
+  const pf = document.getElementById('emi-preview-field');
+  if (document.getElementById('debt-is-emi').checked && p > 0 && n > 0) {
+    const emi = calculateEMI(p, r, n);
+    const totalAmt = emi * n;
+    const totalInt = totalAmt - p;
+    document.getElementById('emi-preview').innerHTML =
+      fmtDec(emi) + '/mo &nbsp;<span style="font-size:11px;color:var(--text3);">Total: ' + fmtDec(totalAmt) + ' &nbsp;·&nbsp; Interest: ' + fmtDec(totalInt) + '</span>';
+    pf.style.display = 'block';
+  } else { pf.style.display = 'none'; }
+}
+
+function markEMIPaid(id) {
+  const d = db.debts.find(x => x.id === id);
+  if (!d || !d.isEMI) return;
+  const curM = new Date().toISOString().slice(0,7);
+  const entry = (d.schedule||[]).find(s => s.month === curM);
+  if (!entry) return showToast('No EMI scheduled this month');
+  if (entry.status === 'paid') return showToast('Already paid this month!');
+  entry.status = 'paid';
+  entry.paidDate = new Date().toISOString().slice(0,10);
+  d.currentBalance = entry.remainingAmount;
+  d.amount = entry.remainingAmount;
+  save(db); renderDebts(); updateMetrics();
+  showToast('EMI paid! Outstanding: ' + fmtDec(d.currentBalance));
+}
+
+function saveEMIDefaults() {
+  const r = parseFloat(document.getElementById('setting-rate').value);
+  const t = parseInt(document.getElementById('setting-tenure').value);
+  if (!isNaN(r) && r >= 0) db.defaultRate = r;
+  if (!isNaN(t) && t > 0) db.defaultTenure = t;
+  save(db); showToast('EMI defaults saved!');
+}
+
 // ── Tab navigation ───────────────────────────────────────────────
 function showTab(name, btn) {
   document.querySelectorAll('.section').forEach(s => s.classList.remove('visible'));
@@ -608,6 +719,8 @@ function showTab(name, btn) {
   if (name === 'charts') renderCharts();
   if (name === 'settings') {
     document.getElementById('setting-budget').value = db.budget;
+    document.getElementById('setting-rate').value = db.defaultRate != null ? db.defaultRate : '';
+    document.getElementById('setting-tenure').value = db.defaultTenure != null ? db.defaultTenure : '';
   }
 }
 
@@ -617,7 +730,7 @@ function updateMetrics() {
   const m = now.toISOString().slice(0,7);
   const spent = db.expenses.filter(e => e.date.startsWith(m)).reduce((s,e) => s + e.amount, 0);
   const left = db.budget - spent;
-  const netDebt = db.debts.reduce((s,d) => s + (d.type === 'owed' ? d.amount : -d.amount), 0);
+  const netDebt = db.debts.reduce((s,d) => { const a = d.isEMI ? (d.currentBalance != null ? d.currentBalance : d.amount) : d.amount; return s + (d.type === 'owed' ? a : -a); }, 0);
   const onTrack = db.goals.filter(g => g.saved >= g.target).length;
 
   document.getElementById('m-spent').textContent = fmt(spent);
@@ -707,21 +820,50 @@ function renderDebts() {
     return;
   }
   const avColors = ['av-0','av-1','av-2','av-3'];
+  const curM = new Date().toISOString().slice(0,7);
   el.innerHTML = db.debts.map((d, i) => {
     const initials = d.person.split(' ').map(w => w[0]).join('').slice(0,2).toUpperCase();
+    const av = avColors[i % 4];
+    if (d.isEMI) {
+      const sched = d.schedule || [];
+      const curEntry = sched.find(s => s.month === curM);
+      const paidCount = sched.filter(s => s.status === 'paid').length;
+      const remaining = d.tenure - paidCount;
+      const isPaid = curEntry && curEntry.status === 'paid';
+      const bal = d.currentBalance != null ? d.currentBalance : d.amount;
+      const dots = sched.slice(0,12).map(s =>
+        `<span title="${s.month}: ${fmtDec(s.emi)}" style="display:inline-block;width:16px;height:8px;border-radius:2px;margin:1px;background:${s.status==='paid'?'var(--green)':s.month===curM?'#e08800':'var(--surface2)'};border:1px solid ${s.status==='paid'?'var(--green)':s.month===curM?'#e08800':'var(--border2)'};cursor:default;"></span>`).join('') +
+        (d.tenure > 12 ? `<span style="font-size:10px;color:var(--text3);vertical-align:middle;"> +${d.tenure-12} more</span>` : '');
+      return `<div class="debt-item" style="flex-wrap:wrap;">
+        <div class="avatar ${av}">${initials}</div>
+        <div class="debt-info">
+          <div class="debt-name">${d.person}<span class="debt-tag tag-owe" style="background:var(--blue-bg);color:var(--blue);">EMI</span></div>
+          <div class="debt-note">${d.rate}% p.a. · ${d.tenure} mo total · ${remaining} mo left · EMI ${fmtDec(d.emi)}/mo${d.note ? ' · ' + d.note : ''}</div>
+          <div style="margin-top:7px;">${dots}</div>
+        </div>
+        <div class="debt-right">
+          <div class="debt-amt amount-neg">-${fmtDec(bal)}</div>
+          <div style="font-size:11px;color:var(--text3);">outstanding</div>
+          <div style="margin-top:6px;display:flex;gap:5px;justify-content:flex-end;">
+            ${!isPaid && curEntry ? `<button class="btn-primary" style="font-size:11px;padding:5px 10px;background:var(--green);" onclick="markEMIPaid('${d.id}')">✓ Pay ${fmtDec(d.emi)}</button>` : isPaid ? `<span style="font-size:11px;color:var(--green);font-weight:600;">✅ Paid</span>` : '<span style="font-size:11px;color:var(--text3);">—</span>'}
+            <button class="btn-danger" onclick="deleteDebt('${d.id}')">✕</button>
+          </div>
+        </div>
+      </div>`;
+    }
     return `<div class="debt-item">
-      <div class="avatar ${avColors[i % 4]}">${initials}</div>
+      <div class="avatar ${av}">${initials}</div>
       <div class="debt-info">
-        <div class="debt-name">${d.person}<span class="debt-tag ${d.type === 'owe' ? 'tag-owe' : 'tag-owed'}">${d.type === 'owe' ? 'I owe' : 'Owes me'}</span></div>
-        <div class="debt-note">${d.note || '—'}${d.due ? ' · Due: ' + fmtDate(d.due) : ''}</div>
+        <div class="debt-name">${d.person}<span class="debt-tag ${d.type==='owe'?'tag-owe':'tag-owed'}">${d.type==='owe'?'I owe':'Owes me'}</span></div>
+        <div class="debt-note">${d.note||'—'}${d.due?' · Due: '+fmtDate(d.due):''}</div>
       </div>
       <div class="debt-right">
-        <div class="debt-amt ${d.type === 'owe' ? 'amount-neg' : 'amount-pos'}">${d.type === 'owe' ? '-' : '+'}${fmtDec(d.amount)}</div>
+        <div class="debt-amt ${d.type==='owe'?'amount-neg':'amount-pos'}">${d.type==='owe'?'-':'+'}${fmtDec(d.amount)}</div>
         <button class="btn-danger" style="margin-top:4px;" onclick="deleteDebt('${d.id}')">✕</button>
       </div>
     </div>`;
   }).join('');
-  const net = db.debts.reduce((s,d) => s + (d.type === 'owed' ? d.amount : -d.amount), 0);
+  const net = db.debts.reduce((s,d) => { const a = d.isEMI ? (d.currentBalance != null ? d.currentBalance : d.amount) : d.amount; return s + (d.type === 'owed' ? a : -a); }, 0);
   const ds = document.getElementById('debt-summary');
   ds.textContent = (net >= 0 ? '+' : '') + fmtDec(net);
   ds.style.color = net >= 0 ? 'var(--green)' : 'var(--red)';
@@ -886,15 +1028,23 @@ function addDebt() {
   const amt = parseFloat(document.getElementById('debt-amt').value);
   const type = document.getElementById('debt-type').value;
   const note = document.getElementById('debt-note').value.trim();
-  const due = document.getElementById('debt-due').value;
-  if (!person) return showToast('Please enter a person\'s name');
+  const startDate = document.getElementById('debt-start-date').value || new Date().toISOString().slice(0,10);
+  const isEMI = document.getElementById('debt-is-emi').checked;
+  if (!person) return showToast('Please enter a name');
   if (isNaN(amt) || amt <= 0) return showToast('Please enter a valid amount');
-  db.debts.unshift({ id: uid(), person, amount: amt, type, note, due });
-  save(db);
-  closeModals();
-  renderDebts();
-  updateMetrics();
-  showToast('Debt added!');
+  let obj = { id: uid(), person, amount: amt, type, note, due: startDate };
+  if (isEMI) {
+    const rate = parseFloat(document.getElementById('debt-rate').value);
+    const tenure = parseInt(document.getElementById('debt-tenure').value);
+    if (isNaN(rate) || rate < 0) return showToast('Enter a valid interest rate');
+    if (isNaN(tenure) || tenure <= 0) return showToast('Enter a valid tenure in months');
+    const emi = calculateEMI(amt, rate, tenure);
+    const schedule = generatePaymentSchedule(startDate, tenure, emi, amt, rate);
+    obj = { ...obj, isEMI: true, rate, tenure, emi, startDate, schedule, currentBalance: amt };
+  }
+  db.debts.unshift(obj);
+  save(db); closeModals(); renderDebts(); updateMetrics();
+  showToast(isEMI ? 'EMI loan added!' : 'Debt added!');
 }
 
 function deleteDebt(id) {
@@ -947,7 +1097,12 @@ function openModal(type) {
     document.getElementById('debt-person').value = '';
     document.getElementById('debt-amt').value = '';
     document.getElementById('debt-note').value = '';
-    document.getElementById('debt-due').value = '';
+    document.getElementById('debt-start-date').value = new Date().toISOString().slice(0,10);
+    document.getElementById('debt-is-emi').checked = false;
+    document.getElementById('debt-rate').value = db.defaultRate != null ? db.defaultRate : '';
+    document.getElementById('debt-tenure').value = db.defaultTenure != null ? db.defaultTenure : '';
+    document.getElementById('emi-fields').style.display = 'none';
+    document.getElementById('emi-preview-field').style.display = 'none';
   }
   document.getElementById('overlay-' + type).classList.add('open');
 }
