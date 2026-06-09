@@ -119,6 +119,8 @@
       border: 1px solid var(--border);
       border-radius: 16px; padding: 1.75rem;
       position: sticky; top: 80px; height: fit-content;
+      max-height: calc(100vh - 100px);
+      overflow-y: auto;
     }
 
     .form-title {
@@ -310,6 +312,105 @@
     }
     .toast.show { opacity: 1; }
 
+    /* ─── GOALS ─── */
+    .goal-item {
+      background: var(--surface2); border: 1px solid var(--border);
+      border-radius: 12px; padding: 1rem;
+      margin-bottom: 0.75rem; transition: all 0.2s;
+    }
+    .goal-item:hover { border-color: #3a3d42; }
+    .goal-head {
+      display: flex; justify-content: space-between; align-items: center;
+      margin-bottom: 0.5rem;
+    }
+    .goal-name { font-weight: 600; font-size: 0.9rem; }
+    .goal-del { background: transparent; border: none; cursor: pointer;
+      color: var(--muted); font-size: 0.8rem; padding: 0.25rem; border-radius: 4px;
+      transition: all 0.2s; }
+    .goal-del:hover { color: var(--expense-c); }
+    .goal-progress { height: 5px; background: var(--border); border-radius: 99px; overflow: hidden; margin-bottom: 0.5rem; }
+    .goal-fill { height: 100%; background: var(--accent); transition: width 0.6s ease; border-radius: 99px; }
+    .goal-stats { display: flex; justify-content: space-between; font-size: 0.72rem; color: var(--muted);
+      font-family: 'DM Mono', monospace; }
+
+    /* ─── DEBTS ─── */
+    .debt-item {
+      background: var(--surface2); border: 1px solid var(--border);
+      border-radius: 12px; padding: 1rem;
+      margin-bottom: 0.75rem; transition: all 0.2s;
+    }
+    .debt-item:hover { border-color: #3a3d42; }
+    .debt-head {
+      display: flex; justify-content: space-between; align-items: flex-start;
+      margin-bottom: 0.5rem;
+    }
+    .debt-info { flex: 1; }
+    .debt-name { font-weight: 600; font-size: 0.9rem; }
+    .debt-person { font-size: 0.72rem; color: var(--muted); font-family: 'DM Mono', monospace; margin-top: 0.2rem; }
+    .debt-amount { font-family: 'Syne', sans-serif; font-weight: 700; color: var(--accent2); font-size: 0.95rem; }
+    .debt-actions { display: flex; gap: 0.5rem; flex-shrink: 0; }
+    .debt-btn { background: transparent; border: 1px solid var(--border); cursor: pointer;
+      color: var(--muted); font-size: 0.7rem; padding: 0.3rem 0.6rem; border-radius: 5px;
+      transition: all 0.2s; }
+    .debt-btn:hover { border-color: var(--accent); color: var(--accent); }
+
+    /* ─── CHART ─── */
+    .chart-card {
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: 16px; padding: 1.5rem;
+      margin-bottom: 1rem;
+    }
+    .chart-title {
+      font-family: 'Syne', sans-serif; font-weight: 700;
+      font-size: 0.9rem; margin-bottom: 1.25rem;
+      color: var(--text);
+    }
+    .month-chart {
+      display: flex; align-items: flex-end; gap: 0.5rem; height: 200px;
+      justify-content: center;
+    }
+    .month-bar {
+      display: flex; flex-direction: column; align-items: center; gap: 0.5rem;
+      flex: 1; max-width: 40px;
+    }
+    .month-bar-fill {
+      width: 100%; background: linear-gradient(to top, var(--accent), var(--accent2));
+      border-radius: 6px 6px 0 0; transition: all 0.6s ease;
+      min-height: 5px;
+    }
+    .month-bar-label { font-size: 0.65rem; color: var(--muted); font-family: 'DM Mono', monospace; }
+    .month-bar-val { font-size: 0.65rem; color: var(--accent2); font-weight: 600; margin-top: 0.25rem; }
+
+    .pie-chart {
+      display: flex; align-items: center; justify-content: center;
+      height: 200px; position: relative;
+    }
+    .pie-circle {
+      width: 140px; height: 140px; border-radius: 50%;
+      background: conic-gradient(var(--accent) 0deg 180deg, var(--accent2) 180deg 270deg, var(--accent3) 270deg 360deg);
+      position: relative;
+    }
+    .pie-center {
+      position: absolute; width: 100px; height: 100px;
+      background: var(--bg); border-radius: 50%;
+      top: 50%; left: 50%; transform: translate(-50%, -50%);
+      display: flex; align-items: center; justify-content: center;
+      flex-direction: column;
+    }
+    .pie-label { font-size: 0.8rem; color: var(--muted); }
+    .pie-value { font-family: 'Syne', sans-serif; font-weight: 700; font-size: 1.1rem; color: var(--accent); }
+
+    .tabs {
+      display: flex; gap: 0.5rem; margin-bottom: 1rem; border-bottom: 1px solid var(--border); padding-bottom: 0.5rem;
+    }
+    .tab-btn {
+      background: transparent; border: none; cursor: pointer;
+      color: var(--muted); font-size: 0.8rem; padding: 0.5rem 0.75rem;
+      font-family: 'DM Mono', monospace; transition: all 0.2s;
+      border-bottom: 2px solid transparent; margin-bottom: -0.5rem;
+    }
+    .tab-btn.active { color: var(--accent); border-bottom-color: var(--accent); }
+
     /* ─── SCROLLBAR ─── */
     ::-webkit-scrollbar { width: 5px; }
     ::-webkit-scrollbar-track { background: transparent; }
@@ -347,7 +448,7 @@
   </div>
 
   <div class="main-grid">
-    <!-- FORM -->
+    <!-- FORM & GOALS & DEBTS -->
     <div>
       <div class="form-card">
         <div class="form-title">Add Transaction</div>
@@ -381,11 +482,57 @@
         </div>
 
         <button class="btn-add" onclick="addTransaction()">Add Transaction →</button>
+
+        <hr style="margin: 1.5rem 0; border: none; border-top: 1px solid var(--border);">
+
+        <!-- GOALS SECTION -->
+        <div class="form-title" style="margin-bottom: 1rem;">📊 Goals</div>
+        <div class="field">
+          <label>Goal Category</label>
+          <select id="f-goal-cat"></select>
+        </div>
+        <div class="field">
+          <label>Limit (₹)</label>
+          <div class="amount-wrap">
+            <span class="currency-sign">₹</span>
+            <input type="number" id="f-goal-amt" placeholder="0.00" min="0" step="0.01"/>
+          </div>
+        </div>
+        <button class="btn-add" onclick="addGoal()" style="background: var(--accent3); color: #000;">Set Goal →</button>
+        <div id="goals-list" style="margin-top: 1rem;"></div>
+
+        <hr style="margin: 1.5rem 0; border: none; border-top: 1px solid var(--border);">
+
+        <!-- DEBTS SECTION -->
+        <div class="form-title" style="margin-bottom: 1rem;">💳 Debts</div>
+        <div class="field">
+          <label>Person/Creditor</label>
+          <input type="text" id="f-debt-person" placeholder="e.g. John, Visa Card..." maxlength="40"/>
+        </div>
+        <div class="field">
+          <label>Amount Owed (₹)</label>
+          <div class="amount-wrap">
+            <span class="currency-sign">₹</span>
+            <input type="number" id="f-debt-amt" placeholder="0.00" min="0" step="0.01"/>
+          </div>
+        </div>
+        <button class="btn-add" onclick="addDebt()" style="background: var(--accent2); color: #fff;">Add Debt →</button>
+        <div id="debts-list" style="margin-top: 1rem;"></div>
       </div>
     </div>
 
     <!-- RIGHT PANEL -->
     <div class="tx-panel">
+      <!-- CHARTS -->
+      <div class="chart-card">
+        <div class="tabs">
+          <button class="tab-btn active" onclick="switchChart('monthly', this)">Monthly Trend</button>
+          <button class="tab-btn" onclick="switchChart('category', this)">By Category</button>
+        </div>
+        <div id="monthly-chart" class="month-chart"></div>
+        <div id="category-chart" class="pie-chart" style="display: none;"></div>
+      </div>
+
       <!-- Category breakdown -->
       <div class="spend-bar">
         <div class="bar-title">Spending by Category (this month)</div>
@@ -414,20 +561,33 @@
 <script>
 // ─── CONSTANTS ───────────────────────────────────────────────
 const STORE_KEY = 'xpense_v1';
+const GOALS_KEY = 'xpense_goals_v1';
+const DEBTS_KEY = 'xpense_debts_v1';
 const EXPENSE_CATS = ['Food & Dining','Transport','Shopping','Utilities','Health','Entertainment','Education','Rent','Travel','Other'];
 const INCOME_CATS  = ['Salary','Freelance','Business','Investment','Gift','Bonus','Other'];
 const CAT_COLORS   = ['#ff6b6b','#ffa94d','#ffd43b','#5affd8','#74c0fc','#da77f2','#e599f7','#ff8787','#63e6be','#abe3ff'];
 
 let transactions = [];
+let goals = [];
+let debts = [];
 let currentType  = 'expense';
 let currentFilter = 'all';
+let currentChart = 'monthly';
 
 // ─── INIT ────────────────────────────────────────────────────
 function init() {
   const raw = localStorage.getItem(STORE_KEY);
   transactions = raw ? JSON.parse(raw) : [];
+  
+  const goalsRaw = localStorage.getItem(GOALS_KEY);
+  goals = goalsRaw ? JSON.parse(goalsRaw) : [];
+  
+  const debtsRaw = localStorage.getItem(DEBTS_KEY);
+  debts = debtsRaw ? JSON.parse(debtsRaw) : [];
+  
   document.getElementById('f-date').value = today();
   populateCategories();
+  populateGoalCategories();
   render();
 }
 
@@ -437,6 +597,8 @@ function today() {
 
 function save() {
   localStorage.setItem(STORE_KEY, JSON.stringify(transactions));
+  localStorage.setItem(GOALS_KEY, JSON.stringify(goals));
+  localStorage.setItem(DEBTS_KEY, JSON.stringify(debts));
 }
 
 // ─── CATEGORIES ──────────────────────────────────────────────
@@ -444,6 +606,11 @@ function populateCategories() {
   const sel = document.getElementById('f-cat');
   const cats = currentType === 'expense' ? EXPENSE_CATS : INCOME_CATS;
   sel.innerHTML = cats.map(c => `<option>${c}</option>`).join('');
+}
+
+function populateGoalCategories() {
+  const sel = document.getElementById('f-goal-cat');
+  sel.innerHTML = EXPENSE_CATS.map(c => `<option>${c}</option>`).join('');
 }
 
 function setType(type) {
@@ -481,6 +648,70 @@ function removeTransaction(id) {
   transactions = transactions.filter(t => t.id !== id);
   save(); render();
   showToast('✕ Removed');
+}
+
+// ─── GOALS ───────────────────────────────────────────────────
+function addGoal() {
+  const cat   = document.getElementById('f-goal-cat').value;
+  const limit = parseFloat(document.getElementById('f-goal-amt').value);
+
+  if (!limit || limit <= 0) return showToast('⚠ Enter a valid goal amount');
+
+  const existing = goals.find(g => g.cat === cat);
+  if (existing) {
+    existing.limit = limit;
+    showToast('✓ Goal updated');
+  } else {
+    goals.push({ id: Date.now(), cat, limit });
+    showToast('✓ Goal added');
+  }
+  save(); render();
+  document.getElementById('f-goal-amt').value = '';
+}
+
+function removeGoal(id) {
+  goals = goals.filter(g => g.id !== id);
+  save(); render();
+  showToast('✕ Goal removed');
+}
+
+// ─── DEBTS ───────────────────────────────────────────────────
+function addDebt() {
+  const person = document.getElementById('f-debt-person').value.trim();
+  const amount = parseFloat(document.getElementById('f-debt-amt').value);
+
+  if (!person) return showToast('⚠ Enter creditor name');
+  if (!amount || amount <= 0) return showToast('⚠ Enter a valid amount');
+
+  debts.push({ id: Date.now(), person, amount, paid: false });
+  save(); render();
+  showToast('✓ Debt added');
+  document.getElementById('f-debt-person').value = '';
+  document.getElementById('f-debt-amt').value = '';
+}
+
+function removeDebt(id) {
+  debts = debts.filter(d => d.id !== id);
+  save(); render();
+  showToast('✕ Debt removed');
+}
+
+function markDebtPaid(id) {
+  const debt = debts.find(d => d.id === id);
+  if (debt) {
+    debt.paid = !debt.paid;
+    save(); render();
+    showToast(debt.paid ? '✓ Marked as paid' : '✓ Marked as unpaid');
+  }
+}
+
+// ─── CHART SWITCH ────────────────────────────────────────────
+function switchChart(type, el) {
+  currentChart = type;
+  document.querySelectorAll('.tab-btn').forEach(t => t.classList.remove('active'));
+  el.classList.add('active');
+  document.getElementById('monthly-chart').style.display = type === 'monthly' ? 'flex' : 'none';
+  document.getElementById('category-chart').style.display = type === 'category' ? 'flex' : 'none';
 }
 
 // ─── FILTER ──────────────────────────────────────────────────
@@ -529,6 +760,9 @@ function render() {
 
   renderCatBars();
   renderList();
+  renderGoals();
+  renderDebts();
+  renderCharts();
 }
 
 function renderCatBars() {
@@ -606,6 +840,135 @@ function renderList() {
       `).join('')}
     </div>
   `).join('');
+}
+
+function renderGoals() {
+  const el = document.getElementById('goals-list');
+  if (!goals.length) {
+    el.innerHTML = '<div style="color:var(--muted);font-size:0.75rem;font-family:\'DM Mono\',monospace;text-align:center;padding:0.5rem">No goals set yet</div>';
+    return;
+  }
+
+  const now = new Date();
+  el.innerHTML = goals.map(g => {
+    const spent = transactions.filter(t =>
+      t.type === 'expense' && t.cat === g.cat &&
+      new Date(t.date).getMonth() === now.getMonth() &&
+      new Date(t.date).getFullYear() === now.getFullYear()
+    ).reduce((s, t) => s + t.amount, 0);
+    
+    const pct = Math.min((spent / g.limit) * 100, 100);
+    const status = spent > g.limit ? '⚠' : '✓';
+    
+    return `
+      <div class="goal-item">
+        <div class="goal-head">
+          <div class="goal-name">${g.cat}</div>
+          <button class="goal-del" onclick="removeGoal(${g.id})">✕</button>
+        </div>
+        <div class="goal-progress">
+          <div class="goal-fill" style="width:${pct}%;background:${spent > g.limit ? 'var(--accent2)' : 'var(--accent3)'}"></div>
+        </div>
+        <div class="goal-stats">
+          <span>${status} ${fmt(spent)} of ${fmt(g.limit)}</span>
+          <span>${Math.round(pct)}%</span>
+        </div>
+      </div>
+    `;
+  }).join('');
+}
+
+function renderDebts() {
+  const el = document.getElementById('debts-list');
+  if (!debts.length) {
+    el.innerHTML = '<div style="color:var(--muted);font-size:0.75rem;font-family:\'DM Mono\',monospace;text-align:center;padding:0.5rem">No debts tracked</div>';
+    return;
+  }
+
+  const total = debts.reduce((s, d) => s + (d.paid ? 0 : d.amount), 0);
+  el.innerHTML = `
+    <div style="font-size:0.75rem;color:var(--muted);font-family:'DM Mono',monospace;margin-bottom:0.75rem;text-align:center">Total: ${fmt(total)}</div>
+  ` + debts.map(d => `
+    <div class="debt-item" style="opacity:${d.paid ? 0.6 : 1}">
+      <div class="debt-head">
+        <div class="debt-info">
+          <div class="debt-name">${escHtml(d.person)}</div>
+          <div class="debt-person">${d.paid ? '✓ PAID' : 'PENDING'}</div>
+        </div>
+        <div class="debt-amount">${fmt(d.amount)}</div>
+      </div>
+      <div class="debt-actions">
+        <button class="debt-btn" onclick="markDebtPaid(${d.id})" title="${d.paid ? 'Mark unpaid' : 'Mark paid'}">${d.paid ? '↩' : '✓'}</button>
+        <button class="debt-btn" onclick="removeDebt(${d.id})" title="Delete">✕</button>
+      </div>
+    </div>
+  `).join('');
+}
+
+function renderCharts() {
+  renderMonthlyChart();
+  renderCategoryChart();
+}
+
+function renderMonthlyChart() {
+  const months = [];
+  const now = new Date();
+  for (let i = 11; i >= 0; i--) {
+    const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+    months.push(d);
+  }
+
+  const data = months.map(m => {
+    const exp = transactions.filter(t =>
+      t.type === 'expense' &&
+      new Date(t.date).getMonth() === m.getMonth() &&
+      new Date(t.date).getFullYear() === m.getFullYear()
+    ).reduce((s, t) => s + t.amount, 0);
+    return { month: m.toLocaleDateString('en-IN', {month: 'short'}), exp };
+  });
+
+  const max = Math.max(...data.map(d => d.exp), 1);
+  const el = document.getElementById('monthly-chart');
+  el.innerHTML = data.map(d => `
+    <div class="month-bar">
+      <div class="month-bar-fill" style="height:${(d.exp / max) * 180}px;"></div>
+      <div class="month-bar-label">${d.month}</div>
+      <div class="month-bar-val">${d.exp > 0 ? fmt(d.exp) : '—'}</div>
+    </div>
+  `).join('');
+}
+
+function renderCategoryChart() {
+  const now = new Date();
+  const thisMonthExp = transactions.filter(t => {
+    if (t.type !== 'expense') return false;
+    const d = new Date(t.date);
+    return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear();
+  });
+
+  const bycat = {};
+  thisMonthExp.forEach(t => { bycat[t.cat] = (bycat[t.cat]||0) + t.amount; });
+  const total = Object.values(bycat).reduce((s, v) => s + v, 0);
+
+  if (!total) {
+    document.getElementById('category-chart').innerHTML = '<div style="text-align:center;color:var(--muted)">No data</div>';
+    return;
+  }
+
+  const el = document.getElementById('category-chart');
+  el.innerHTML = `
+    <div style="position:relative;width:100%">
+      <div style="display:flex;flex-direction:column;gap:0.75rem;width:50%">
+        ${Object.entries(bycat).sort((a,b)=>b[1]-a[1]).slice(0,5).map(([cat, amt], i) => `
+          <div style="display:flex;align-items:center;gap:0.5rem;font-size:0.75rem">
+            <div style="width:12px;height:12px;background:${CAT_COLORS[i%CAT_COLORS.length]};border-radius:3px"></div>
+            <span style="color:var(--muted);flex:1">${cat}</span>
+            <span style="color:var(--accent);font-weight:600">${fmt(amt)}</span>
+          </div>
+        `).join('')}
+      </div>
+    </div>
+  `;
 }
 
 // ─── UTILS ───────────────────────────────────────────────────
